@@ -1,9 +1,9 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import logging
-from dotenv import load_dotenv
-from langchain_groq import ChatGroq
 
+from dotenv import load_dotenv
 from embed import QueryResult
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_groq import ChatGroq
 
 load_dotenv()
 

@@ -1,21 +1,28 @@
 import asyncio
-from embed import Embed
-from llm import stream_answer
 import uuid
-from llm import format_context
 
-from langchain_core.messages import AIMessage, HumanMessage
-from tasks import background_ingest, ingest_status
 from dotenv import load_dotenv
+from embed import Embed
 from fastapi import BackgroundTasks, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.sse import EventSourceResponse
+from langchain_core.messages import AIMessage, HumanMessage
+from llm import stream_answer
+from tasks import background_ingest, ingest_status
 
 load_dotenv()
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-@app.get("/health")
+@app.get("/")
 def health():
     """Health check endpoint"""
     return {"status": "ok"}
@@ -58,14 +65,15 @@ async def chat(repo_url: str, question: str, session_id: str = "default"):
     """
     results = Embed(repo_url).query(question)
     history = chat_history.get(session_id, [])
+    if len(history) > 10:
+        history = history[-10:]
 
     full_response = ""
-    format_context(results)
 
     for token in stream_answer(repo_url, question, results, history):
         if token:
             full_response += token
-            yield token
+            yield {"data": token}
 
     chat_history.setdefault(session_id, [])
     chat_history[session_id].extend(
