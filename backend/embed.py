@@ -12,6 +12,11 @@ class QueryResult(BaseModel):
 
 
 class Embed:
+    """Embed class for embedding and searching text
+    Args:
+        collection_name (str): name of collection
+    """
+
     def __init__(self, collection_name):
         self.collection_name = self._correct_collection_name(collection_name)
         self.client = chromadb.PersistentClient()
@@ -19,7 +24,15 @@ class Embed:
             name=self.collection_name
         )
 
-    def embed(self, text, metadata=None) -> str:
+    def embed(self, text, metadata={}) -> str:
+        """Embed text and metadata into collection
+        Args:
+            text (str): text to embed
+            metadata (dict, optional): metadata to embed. Defaults to {}.
+        Returns:
+            str: content hash
+        """
+
         content_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
 
         exiting = self.collection.get(ids=[content_hash])
@@ -34,6 +47,14 @@ class Embed:
         return content_hash
 
     def semantic_search(self, query_text: str, n_results=5) -> list[QueryResult]:
+        """Search semantically
+        Args:
+            query_text (str): query text
+            n_results (int, optional): number of results. Defaults to 5.
+        Returns:
+            list[QueryResult]: list of query results
+        """
+
         results = self.collection.query(
             query_texts=query_text,
             n_results=n_results,
@@ -45,7 +66,7 @@ class Embed:
             QueryResult(
                 id=id_,
                 content=str(doc),
-                metadata=meta,
+                metadata=meta.dict(),
                 distance=dist,
             )
             for id_, doc, meta, dist in zip(

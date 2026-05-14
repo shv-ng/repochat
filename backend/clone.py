@@ -1,4 +1,5 @@
 import os
+import logging
 import shutil
 import types
 
@@ -52,6 +53,7 @@ class CloneRepo:
         except git.exc.GitCommandError as e:
             if os.path.exists(self.repo_path):
                 shutil.rmtree(self.repo_path)
+            logging.error(f"Error cloning repo: {self.url} with error: {e}")
             raise ValueError(f"Invalid url: {self.url}") from e
 
     def get_repo_files(self) -> types.GeneratorType:
