@@ -1,5 +1,5 @@
-import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+import logging
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 
@@ -28,7 +28,7 @@ def format_context(result: list[QueryResult]) -> str:
     return "\n\n".join(f"# {r.metadata['file_path']}\n\n{r.content}" for r in result)
 
 
-async def stream_answer(
+def stream_answer(
     repo_url: str,
     question: str,
     context_results: list[QueryResult],
@@ -46,7 +46,7 @@ async def stream_answer(
     context = format_context(context_results)
     full_question = f"Context:\n{context}\n\nQuestion: {question}"
 
-    async for chunk in chain.stream(
+    for chunk in chain.stream(
         {
             "repo_url": repo_url,
             "question": full_question,

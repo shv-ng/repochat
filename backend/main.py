@@ -1,10 +1,10 @@
 import asyncio
-import inspect
 from embed import Embed
+from llm import stream_answer
 import uuid
+from llm import format_context
 
 from langchain_core.messages import AIMessage, HumanMessage
-from llm import stream_answer
 from tasks import background_ingest, ingest_status
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI
@@ -56,36 +56,19 @@ async def chat(repo_url: str, question: str, session_id: str = "default"):
         session_id (str): session id
 
     """
-    print("break here")
     results = Embed(repo_url).query(question)
-    print("break here")
     history = chat_history.get(session_id, [])
 
-    print("break here")
     full_response = ""
+    format_context(results)
 
-    print("break here")
+    for token in stream_answer(repo_url, question, results, history):
+        if token:
+            full_response += token
+            yield token
 
-    async def event_stream():
-        print("break here")
-        nonlocal full_response
-        print("break here")
-        async for token in stream_answer(repo_url, question, results, history):
-            print("break here")
-            if token:
-                print("break here")
-                full_response += token
-                print("break here")
-                yield {"data": token}
-
-        print("break here")
-        chat_history.setdefault(session_id, [])
-        print("break here")
-        chat_history[session_id].extend(
-            [HumanMessage(content=question), AIMessage(content=full_response)]
-        )
-        print("break here")
-
-    print("break here")
-    print(inspect.isasyncgen(event_stream()))
-    return EventSourceResponse(event_stream())
+    chat_history.setdefault(session_id, [])
+    chat_history[session_id].extend(
+        [HumanMessage(content=question), AIMessage(content=full_response)]
+    )
+    yield {"data": full_response}
