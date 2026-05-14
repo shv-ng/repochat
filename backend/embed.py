@@ -42,6 +42,10 @@ class Embed:
         if exiting["ids"]:
             return content_hash
 
+        file_path = metadata.get("file_path", "")
+        if file_path.lower().endswith("readme.md"):
+            metadata["type"] = "readme"
+
         self.collection.add(
             documents=[text],
             ids=[content_hash],
@@ -126,15 +130,39 @@ class Embed:
         """
         keyword_results = self.keyword_search(query_texts, n_results)
         semantic_results = self.semantic_search(query_texts, n_results)
+        readme = self._get_readme()
 
-        results = keyword_results
+        results = [readme] if readme else []
+        results.extend(keyword_results)
 
-        ids = set(keyword_results[0].id for keyword_results in keyword_results)
+        ids = set(keyword_results.id for keyword_results in keyword_results)
         for semantic_result in semantic_results:
             if semantic_result.id not in ids:
                 results.append(semantic_result)
 
         return results
+
+    def _get_readme(self) -> QueryResult:
+        """Get readme
+
+        Returns:
+            str: readme
+        """
+        res = self.collection.get(
+            where={"type": "readme"},
+            include=["documents", "metadatas"],
+            limit=1,
+        )
+
+        if not res["ids"]:
+            return None
+
+        return QueryResult(
+            id=res["ids"][0],
+            content=res["documents"][0],
+            metadata=res["metadatas"][0],
+            distance=0,
+        )
 
     @staticmethod
     def _correct_collection_name(url):

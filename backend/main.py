@@ -27,7 +27,7 @@ async def ingest(repo_url: str, background_tasks: BackgroundTasks):
     Args:
         repo_url (str): github url
     """
-    task_id = str(uuid.uuid4())[:8]
+    task_id = str(uuid.uuid4())[:6]
     background_tasks.add_task(background_ingest, task_id, repo_url)
 
     return {"task_id": task_id}
