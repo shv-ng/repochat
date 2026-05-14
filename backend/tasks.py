@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 import redis
 from clone import CloneRepo
@@ -26,17 +27,25 @@ def background_ingest(task_id: str, repo_url: str):
         total_files = len(files)
 
         for i, file in enumerate(files):
-            if CloneRepo.is_text_file(file):
-                content = Path(file).read_text()
-                chunks = chunk_with_metadata(file, content)
-                for chunk in chunks:
-                    embed.embed(chunk.page_content, chunk.metadata)
+            try:
+                if CloneRepo.is_text_file(file):
+                    content = Path(file).read_text(encoding="utf-8", errors="ignore")
+
+                    chunks = chunk_with_metadata(file, content)
+                    for chunk in chunks:
+                        embed.embed(chunk.page_content, chunk.metadata)
 
                 r.set(task_id, f"Processing: {i + 1}/{total_files} files")
+
+            except Exception as file_error:
+                print(f"Skipping {file} due to error: {file_error}")
+                continue
 
         r.set(task_id, "done")
     except Exception as e:
         r.set(task_id, f"error: {str(e)}")
+    finally:
+        shutil.rmtree(clone.repo_path)
 
 
 def ingest_status(task_id: str):

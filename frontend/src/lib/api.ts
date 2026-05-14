@@ -1,4 +1,6 @@
-const BASE_URL = 'http://localhost:8000';
+import { PUBLIC_BASE_URL } from '$env/static/public';
+
+const BASE_URL = PUBLIC_BASE_URL;
 
 export async function ingestRepo(repoUrl: string): Promise<string> {
 	const res = await fetch(`${BASE_URL}/ingest?repo_url=${encodeURIComponent(repoUrl)}`, {

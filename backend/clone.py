@@ -1,5 +1,7 @@
+from pathlib import Path
 import logging
 import os
+import tempfile
 import shutil
 import types
 
@@ -25,20 +27,23 @@ class CloneRepo:
     def __init__(self, url: str):
         self.url = url
         self.repo_path = None
+        self.base_temp_dir = Path(tempfile.gettempdir()) / "repochat"
+        os.makedirs(self.base_temp_dir, exist_ok=True)
 
-    def clone_repo(self) -> str:
+    def clone_repo(self) -> Path:
         """Clone repo from github url
 
         Args:
             url (str): url to repo
 
         Returns:
-            str: path to repo
+            pathlib.Path: path to repo
 
         Raises:
             ValueError: if url is invalid
         """
-        self.repo_path = "./data/" + self.url.replace(
+
+        self.repo_path = self.base_temp_dir / self.url.replace(
             "https://github.com/", ""
         ).replace(".git", "").replace("/", "_")
 
