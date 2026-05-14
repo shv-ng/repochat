@@ -15,6 +15,7 @@ dependencies = [
     "lxml>=6.1.0",
     "python-dotenv>=1.2.2",
     "redis>=7.4.0",
+    "unstructured[all-docs]>=0.22.28",
 ]
 
 [dependency-groups]
