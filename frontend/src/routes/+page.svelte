@@ -1,2 +1,110 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script lang="ts">
+	import { goto } from '$app/navigation';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { ingestRepo, watchIngestStatus } from '$lib/api';
+	import { repoUrl, isIngested } from '$lib/stores';
+	import { get } from 'svelte/store';
+
+	let url = get(repoUrl) || '';
+	let status = '';
+	let loading = false;
+	let error = '';
+
+	async function handleIngest() {
+		if (!url.trim()) return;
+		error = '';
+		loading = true;
+		status = 'Starting...';
+		repoUrl.set(url.trim());
+
+		try {
+			const taskId = await ingestRepo(url.trim());
+			watchIngestStatus(
+				taskId,
+				(s) => (status = s),
+				() => {
+					isIngested.set(true);
+					loading = false;
+					goto('/chat');
+				},
+				(err) => {
+					error = err;
+					loading = false;
+					status = '';
+				}
+			);
+		} catch (e) {
+			error = 'Failed to connect to backend. Is it running?';
+			loading = false;
+			status = '';
+		}
+	}
+</script>
+
+<div class="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center px-4">
+	<!-- Logo / Header -->
+	<div class="mb-12 text-center">
+		<div class="flex items-center justify-center gap-3 mb-4">
+			<div class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white font-bold text-lg">
+				R
+			</div>
+			<h1 class="text-3xl font-bold tracking-tight">RepoChat</h1>
+		</div>
+		<p class="text-zinc-400 text-base max-w-sm">
+			Paste a GitHub repository URL to index it, then ask questions about the codebase.
+		</p>
+	</div>
+
+	<!-- Card -->
+	<div class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+		<label class="block text-sm font-medium text-zinc-300 mb-2" for="repo-url">
+			GitHub Repository URL
+		</label>
+		<Input
+			id="repo-url"
+			type="url"
+			placeholder="https://github.com/owner/repo"
+			bind:value={url}
+			disabled={loading}
+			class="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-indigo-500 mb-4"
+			onkeydown={(e) => e.key === 'Enter' && handleIngest()}
+		/>
+
+		<Button
+			onclick={handleIngest}
+			disabled={loading || !url.trim()}
+			class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+		>
+			{#if loading}
+				<span class="flex items-center gap-2">
+					<svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+					</svg>
+					Ingesting...
+				</span>
+			{:else}
+				Ingest Repository →
+			{/if}
+		</Button>
+
+		<!-- Status / Error -->
+		{#if status && !error}
+			<div class="mt-4 flex items-center gap-2 text-sm text-zinc-400">
+				<span class="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+				{status}
+			</div>
+		{/if}
+
+		{#if error}
+			<div class="mt-4 text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-3 py-2">
+				{error}
+			</div>
+		{/if}
+	</div>
+
+	<p class="mt-8 text-xs text-zinc-600">
+		Supports public GitHub repos. Large repos may take a moment to index.
+	</p>
+</div>
