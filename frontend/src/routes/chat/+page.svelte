@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
+  import { marked } from 'marked';
 	import { Input } from '$lib/components/ui/input';
 	import { Separator } from '$lib/components/ui/separator';
 	import { streamChat } from '$lib/api';
@@ -9,8 +10,8 @@
 	import { get } from 'svelte/store';
 	import type { Message } from '$lib/stores';
 
-	let question = '';
-	let isStreaming = false;
+	let question =$state( '');
+	let isStreaming =$state( false);
 	let chatEl: HTMLDivElement;
 
 	const repo = get(repoUrl);
@@ -140,22 +141,25 @@
 						<div class="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-indigo-400 shrink-0 mt-0.5">
 							AI
 						</div>
-						<div class="flex-1 min-w-0">
-							<div class="text-sm leading-relaxed text-zinc-200 whitespace-pre-wrap break-words">
-								{#if msg.content}
-									{msg.content}
-								{:else}
-									<span class="inline-flex gap-1 items-center text-zinc-500">
-										<span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-										<span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-										<span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
-									</span>
-								{/if}
-								{#if msg.streaming}
-									<span class="inline-block w-0.5 h-4 bg-indigo-400 animate-pulse ml-0.5 align-middle"></span>
-								{/if}
-							</div>
-						</div>
+<!-- assistant message content, replace the text div -->
+<div class="flex-1 min-w-0">
+    <div class="text-sm leading-relaxed text-zinc-200 prose prose-invert prose-sm max-w-none
+                prose-code:bg-zinc-800 prose-code:px-1 prose-code:rounded
+                prose-pre:bg-zinc-800 prose-pre:border prose-pre:border-zinc-700">
+        {#if msg.content}
+            {@html marked(msg.content)}
+        {:else}
+            <span class="inline-flex gap-1 items-center text-zinc-500">
+                <span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                <span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                <span class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+            </span>
+        {/if}
+        {#if msg.streaming}
+            <span class="inline-block w-0.5 h-4 bg-indigo-400 animate-pulse ml-0.5 align-middle"></span>
+        {/if}
+    </div>
+</div>
 					</div>
 				{/if}
 			{/each}
