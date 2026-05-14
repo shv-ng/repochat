@@ -13,6 +13,7 @@ class QueryResult(BaseModel):
 
 class Embed:
     """Embed class for embedding and searching text
+
     Args:
         collection_name (str): name of collection
     """
@@ -26,9 +27,11 @@ class Embed:
 
     def embed(self, text, metadata={}) -> str:
         """Embed text and metadata into collection
+
         Args:
             text (str): text to embed
             metadata (dict, optional): metadata to embed. Defaults to {}.
+
         Returns:
             str: content hash
         """
@@ -48,9 +51,11 @@ class Embed:
 
     def semantic_search(self, query_text: str, n_results=5) -> list[QueryResult]:
         """Search semantically
+
         Args:
             query_text (str): query text
             n_results (int, optional): number of results. Defaults to 5.
+
         Returns:
             list[QueryResult]: list of query results
         """
@@ -78,6 +83,15 @@ class Embed:
         ]
 
     def keyword_search(self, query_text: str, n_results=5) -> list[QueryResult]:
+        """Search for query text using keyword search
+
+        Args:
+            query_text (str): query text
+            n_results (int, optional): number of results. Defaults to 5.
+
+        Returns:
+            list[QueryResult]: list of query results
+        """
         results = self.collection.query(
             query_texts=query_text,
             where_document={"$contains": query_text},
@@ -101,6 +115,15 @@ class Embed:
         ]
 
     def query(self, query_texts: str, n_results=5) -> list[QueryResult]:
+        """Search for query text using keyword and semantic search
+
+        Args:
+            query_texts (str): query text
+            n_results (int, optional): number of results. Defaults to 5.
+
+        Returns:
+            list[QueryResult]: list of query results
+        """
         keyword_results = self.keyword_search(query_texts, n_results)
         semantic_results = self.semantic_search(query_texts, n_results)
 
@@ -115,6 +138,14 @@ class Embed:
 
     @staticmethod
     def _correct_collection_name(url):
+        """Correct collection name
+
+        Args:
+            url (str): url to repo
+
+        Returns:
+            str: corrected collection name
+        """
         return (
             url.replace("https://github.com/", "").replace(".git", "").replace("/", "_")
         )

@@ -23,12 +23,12 @@ class IngestionStatus(BaseModel):
 ingestion_status: dict[str, IngestionStatus] = {}
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
 def background_ingest(task_id: str, github_url: str):
+    """Background ingest function
+    Args:
+        task_id (str): task id
+        github_url (str): github url
+    """
     try:
         ingestion_status[task_id].status = "Cloning repo..."
         clone = CloneRepo(github_url)
@@ -56,8 +56,18 @@ def background_ingest(task_id: str, github_url: str):
         ingestion_status[task_id].status = f"error: {str(e)}"
 
 
+@app.get("/health")
+def health():
+    """Health check endpoint"""
+    return {"status": "ok"}
+
+
 @app.post("/ingest", response_class=EventSourceResponse)
 async def ingest(github_url: str):
+    """Ingest endpoint
+    Args:
+        github_url (str): github url
+    """
     task_id = str(uuid.uuid4())[:8]
     ingestion_status[task_id] = IngestionStatus(task_id=task_id, status="Queued")
 

@@ -2,10 +2,13 @@ import json
 import pprint
 from pathlib import Path
 
-from langchain_text_splitters import (HTMLSectionSplitter, Language,
-                                      MarkdownHeaderTextSplitter,
-                                      RecursiveCharacterTextSplitter,
-                                      RecursiveJsonSplitter)
+from langchain_text_splitters import (
+    HTMLSectionSplitter,
+    Language,
+    MarkdownHeaderTextSplitter,
+    RecursiveCharacterTextSplitter,
+    RecursiveJsonSplitter,
+)
 
 EXTENSION_MAP = {
     ".py": Language.PYTHON,
@@ -84,6 +87,17 @@ def get_splitter(
 
 
 def chunk_with_metadata(file_path, text, chunk_size=1000, chunk_overlap=200):
+    """Chunk text with metadata
+
+    Args:
+        file_path (str): path to file
+        text (str): text to chunk
+        chunk_size (int, optional): chunk size. Defaults to 1000.
+        chunk_overlap (int, optional): chunk overlap. Defaults to 200.
+
+    Returns:
+        list[Document]: list of documents
+    """
     ext = Path(file_path).suffix
     splitter = get_splitter(ext, chunk_size, chunk_overlap)
 
