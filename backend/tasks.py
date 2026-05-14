@@ -1,4 +1,9 @@
+from pathlib import Path
+
 import redis
+from clone import CloneRepo
+from embed import Embed
+from splitter import chunk_with_metadata
 
 r = redis.Redis(host="localhost", port=6379, decode_responses=True)
 
@@ -27,10 +32,12 @@ def background_ingest(task_id: str, github_url: str):
                 for chunk in chunks:
                     embed.embed(chunk.page_content, chunk.metadata)
 
-                ingestion_status[
-                    task_id
-                ].status = f"Processing: {i + 1}/{total_files} files"
+                r.set(task_id, f"Processing: {i + 1}/{total_files} files")
 
-        ingestion_status[task_id].status = "done"
+        r.set(task_id, "done")
     except Exception as e:
-        ingestion_status[task_id].status = f"error: {str(e)}"
+        r.set(task_id, f"error: {str(e)}")
+
+
+def ingest_status(task_id: str):
+    return r.get(task_id)

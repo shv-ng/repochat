@@ -1,6 +1,5 @@
-from splitter import chunk_with_metadata
-
 import pytest
+from splitter import chunk_with_metadata
 
 
 @pytest.fixture
