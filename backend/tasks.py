@@ -12,7 +12,7 @@ def background_ingest(task_id: str, repo_url: str):
     """Background ingest function
     Args:
         task_id (str): task id
-        github_url (str): github url
+        repo_url (str): repo url
     """
     try:
         r.set(task_id, "Cloning repo...")

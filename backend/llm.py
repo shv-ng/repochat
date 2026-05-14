@@ -28,7 +28,7 @@ def format_context(result: list[QueryResult]) -> str:
     return "\n\n".join(f"# {r.metadata['file_path']}\n\n{r.content}" for r in result)
 
 
-def stream_answer(
+async def stream_answer(
     repo_url: str,
     question: str,
     context_results: list[QueryResult],
@@ -46,7 +46,7 @@ def stream_answer(
     context = format_context(context_results)
     full_question = f"Context:\n{context}\n\nQuestion: {question}"
 
-    for chunk in chain.stream(
+    async for chunk in chain.stream(
         {
             "repo_url": repo_url,
             "question": full_question,

@@ -71,7 +71,7 @@ class Embed:
             QueryResult(
                 id=id_,
                 content=str(doc),
-                metadata=meta.dict(),
+                metadata=meta,
                 distance=dist,
             )
             for id_, doc, meta, dist in zip(

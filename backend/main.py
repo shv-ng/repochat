@@ -1,8 +1,11 @@
 import asyncio
+import inspect
+from embed import Embed
 import uuid
 
-import tasks
-import llm
+from langchain_core.messages import AIMessage, HumanMessage
+from llm import stream_answer
+from tasks import background_ingest, ingest_status
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.sse import EventSourceResponse
@@ -19,13 +22,13 @@ def health():
 
 
 @app.post("/ingest")
-async def ingest(github_url: str, background_tasks: BackgroundTasks):
+async def ingest(repo_url: str, background_tasks: BackgroundTasks):
     """Ingest endpoint
     Args:
-        github_url (str): github url
+        repo_url (str): github url
     """
     task_id = str(uuid.uuid4())[:8]
-    background_tasks.add_task(tasks.background_ingest, task_id, github_url)
+    background_tasks.add_task(background_ingest, task_id, repo_url)
 
     return {"task_id": task_id}
 
@@ -33,29 +36,56 @@ async def ingest(github_url: str, background_tasks: BackgroundTasks):
 @app.get("/status", response_class=EventSourceResponse)
 async def get_ingest_status(task_id: str):
     while True:
-        status = tasks.ingest_status(task_id)
-        yield {"data": {"task_id": task_id, "status": status}}
+        status = ingest_status(task_id)
         await asyncio.sleep(0.2)
         if status == "done" or status.startswith("error"):
             break
+        yield {"data": {"task_id": task_id, "status": status}}
     yield {"data": {"task_id": task_id, "status": status}}
 
 
-@app.post("/chat")
-async def chat(github_url: str, question: str, background_tasks: BackgroundTasks):
+chat_history = {}
+
+
+@app.post("/chat", response_class=EventSourceResponse)
+async def chat(repo_url: str, question: str, session_id: str = "default"):
     """Chat endpoint
     Args:
-        github_url (str): github url
+        repo_url (str): github url
         question (str): question
+        session_id (str): session id
+
     """
-    task_id = str(uuid.uuid4())[:8]
-    background_tasks.add_task(tasks.background_ingest, task_id, github_url)
+    print("break here")
+    results = Embed(repo_url).query(question)
+    print("break here")
+    history = chat_history.get(session_id, [])
 
-    history = []
-    context_results = []
+    print("break here")
+    full_response = ""
 
-    for chunk in llm.stream_answer(github_url, question, context_results, history):
-        history.append({"role": "user", "content": chunk})
-        yield {"data": {"task_id": task_id, "history": history}}
+    print("break here")
 
-    yield {"data": {"task_id": task_id, "history": history}}
+    async def event_stream():
+        print("break here")
+        nonlocal full_response
+        print("break here")
+        async for token in stream_answer(repo_url, question, results, history):
+            print("break here")
+            if token:
+                print("break here")
+                full_response += token
+                print("break here")
+                yield {"data": token}
+
+        print("break here")
+        chat_history.setdefault(session_id, [])
+        print("break here")
+        chat_history[session_id].extend(
+            [HumanMessage(content=question), AIMessage(content=full_response)]
+        )
+        print("break here")
+
+    print("break here")
+    print(inspect.isasyncgen(event_stream()))
+    return EventSourceResponse(event_stream())
