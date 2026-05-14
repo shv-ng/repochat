@@ -1,4 +1,4 @@
-from chunk import chunk_with_metadata
+from splitter import chunk_with_metadata
 
 import pytest
 
