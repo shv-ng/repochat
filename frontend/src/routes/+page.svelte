@@ -6,10 +6,10 @@
 	import { repoUrl, isIngested } from '$lib/stores';
 	import { get } from 'svelte/store';
 
-	let url = get(repoUrl) || '';
-	let status = '';
-	let loading = false;
-	let error = '';
+	let url =$state( get(repoUrl) || '');
+	let status =$state( '');
+	let loading =$state( false);
+	let error =$state( '');
 
 	async function handleIngest() {
 		if (!url.trim()) return;
@@ -71,40 +71,40 @@
 			onkeydown={(e) => e.key === 'Enter' && handleIngest()}
 		/>
 
-		<Button
-			onclick={handleIngest}
-			disabled={loading || !url.trim()}
-			class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
-		>
-			{#if loading}
-				<span class="flex items-center gap-2">
-					<svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-					</svg>
-					Ingesting...
-				</span>
-			{:else}
-				Ingest Repository →
-			{/if}
-		</Button>
+    <Button
+      onclick={handleIngest}
+      disabled={loading || !url.trim()}
+      class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+    >
+      {#if loading}
+        <span class="flex items-center gap-2">
+          <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          {status || 'Starting...'}
+        </span>
+      {:else}
+        Ingest Repository →
+      {/if}
+    </Button>
 
-		<!-- Status / Error -->
-		{#if status && !error}
-			<div class="mt-4 flex items-center gap-2 text-sm text-zinc-400">
-				<span class="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
-				{status}
-			</div>
-		{/if}
+    <!-- Status / Error -->
+    {#if status && !error}
+      <div class="mt-4 flex items-center gap-2 text-sm text-zinc-400">
+        <span class="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+        {status}
+      </div>
+    {/if}
 
-		{#if error}
-			<div class="mt-4 text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-3 py-2">
-				{error}
-			</div>
-		{/if}
-	</div>
+    {#if error}
+      <div class="mt-4 text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-3 py-2">
+        {error}
+      </div>
+    {/if}
+  </div>
 
-	<p class="mt-8 text-xs text-zinc-600">
-		Supports public GitHub repos. Large repos may take a moment to index.
-	</p>
+  <p class="mt-8 text-xs text-zinc-600">
+    Supports public GitHub repos. Large repos may take a moment to index.
+  </p>
 </div>

@@ -16,15 +16,19 @@ export function watchIngestStatus(
 	onError: (err: string) => void
 ): () => void {
 	const es = new EventSource(`${BASE_URL}/status?task_id=${taskId}`);
+	let finished = false;  // ← track if we're done
 
 	es.onmessage = (e) => {
-		const data = JSON.parse(e.data);
+		const outer = JSON.parse(e.data);
+    const data = outer.data ?? outer;
 		const status: string = data.status;
 		onStatus(status);
 		if (status === 'done') {
+			finished = true;
 			es.close();
 			onDone();
 		} else if (status.startsWith('error')) {
+			finished = true;
 			es.close();
 			onError(status);
 		}
@@ -32,7 +36,7 @@ export function watchIngestStatus(
 
 	es.onerror = () => {
 		es.close();
-		onError('Connection lost');
+		if (!finished) onError('Connection lost');  // ← only error if not already done
 	};
 
 	return () => es.close();
@@ -46,27 +50,27 @@ export function streamChat(
 	onDone: () => void,
 	onError: (err: string) => void
 ): () => void {
-	const params = new URLSearchParams({
-		repo_url: repoUrl,
-		question,
-		session_id: sessionId
-	});
-
+	const params = new URLSearchParams({ repo_url: repoUrl, question, session_id: sessionId });
 	const es = new EventSource(`${BASE_URL}/chat?${params.toString()}`);
-	let lastData = '';
+	let finished = false;
+	let lastToken = '';
 
 	es.onmessage = (e) => {
-		const token = e.data;
-		// The last event is the full response; only stream tokens before it
-		if (lastData) onToken(lastData);
-		lastData = token;
+		const outer = JSON.parse(e.data);
+		const token: string = outer.data ?? outer;
+		// backend sends each token, then repeats the full response as final event
+		// we buffer one token behind so we can drop the last (full) one
+		if (lastToken) onToken(lastToken);
+		lastToken = token;
 	};
 
 	es.onerror = () => {
 		es.close();
-		onDone(); // SSE closes after stream ends
+		if (!finished) {
+			finished = true;
+			onDone();
+		}
 	};
 
-	// EventSource doesn't have an explicit "end" event; closing fires onerror
-	return () => es.close();
+	return () => { finished = true; es.close(); };
 }

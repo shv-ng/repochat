@@ -54,7 +54,7 @@ async def get_ingest_status(task_id: str):
 chat_history = {}
 
 
-@app.post("/chat", response_class=EventSourceResponse)
+@app.get("/chat", response_class=EventSourceResponse)
 async def chat(repo_url: str, question: str, session_id: str = "default"):
     """Chat endpoint
     Args:

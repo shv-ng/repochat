@@ -27,63 +27,47 @@
 		chatEl?.scrollTo({ top: chatEl.scrollHeight, behavior: 'smooth' });
 	}
 
-	async function sendMessage() {
-		const q = question.trim();
-		if (!q || isStreaming) return;
-		question = '';
+  async function sendMessage() {
+    const q = question.trim();
+    if (!q || isStreaming) return;
+    question = '';  // clear immediately on send
 
-		const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: q };
-		const assistantMsg: Message = {
-			id: crypto.randomUUID(),
-			role: 'assistant',
-			content: '',
-			streaming: true
-		};
+    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: q };
+    const assistantMsg: Message = { id: crypto.randomUUID(), role: 'assistant', content: '', streaming: true };
 
-		messages.update((m) => [...m, userMsg, assistantMsg]);
-		isStreaming = true;
-		await scrollToBottom();
+    messages.update((m) => [...m, userMsg, assistantMsg]);
+    isStreaming = true;
+    await scrollToBottom();
 
-		streamChat(
-			repo,
-			q,
-			sid,
-			(token) => {
-				messages.update((m) => {
-					const last = m[m.length - 1];
-					if (last.role === 'assistant') {
-						return [...m.slice(0, -1), { ...last, content: last.content + token }];
-					}
-					return m;
-				});
-				scrollToBottom();
-			},
-			() => {
-				messages.update((m) => {
-					const last = m[m.length - 1];
-					if (last.role === 'assistant') {
-						return [...m.slice(0, -1), { ...last, streaming: false }];
-					}
-					return m;
-				});
-				isStreaming = false;
-				scrollToBottom();
-			},
-			(err) => {
-				messages.update((m) => {
-					const last = m[m.length - 1];
-					if (last.role === 'assistant') {
-						return [
-							...m.slice(0, -1),
-							{ ...last, content: `Error: ${err}`, streaming: false }
-						];
-					}
-					return m;
-				});
-				isStreaming = false;
-			}
-		);
-	}
+    streamChat(
+        repo, q, sid,
+        (token) => {
+            messages.update((m) => {
+                const last = m[m.length - 1];
+                if (last.role === 'assistant') return [...m.slice(0, -1), { ...last, content: last.content + token }];
+                return m;
+            });
+            scrollToBottom();
+        },
+        () => {
+            messages.update((m) => {
+                const last = m[m.length - 1];
+                if (last.role === 'assistant') return [...m.slice(0, -1), { ...last, streaming: false }];
+                return m;
+            });
+            isStreaming = false;  // ← re-enables input
+            scrollToBottom();
+        },
+        (err) => {
+            messages.update((m) => {
+                const last = m[m.length - 1];
+                if (last.role === 'assistant') return [...m.slice(0, -1), { ...last, content: `Error: ${err}`, streaming: false }];
+                return m;
+            });
+            isStreaming = false;
+        }
+    );
+}
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter' && !e.shiftKey) {
