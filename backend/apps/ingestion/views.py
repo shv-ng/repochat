@@ -13,6 +13,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
 
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 # Create your views here.
 @method_decorator(csrf_exempt, name="dispatch")
 class IngestionView(View):
@@ -21,12 +23,19 @@ class IngestionView(View):
         if not job_id:
             return JsonResponse({"error": "job_id required"}, status=400)
 
+        # Authenticate
+        auth = JWTAuthentication()
+        user_auth = auth.authenticate(request)
+        if not user_auth:
+            return JsonResponse({"error": "Unauthorized"}, status=401)
+        user = user_auth[0]
+
         def event_stream():
             last_message = None
 
             while True:
                 try:
-                    job = IngestionJob.objects.get(id=job_id)
+                    job = IngestionJob.objects.get(id=job_id, user=user)
                 except IngestionJob.DoesNotExist:
                     yield f"data: {json.dumps({'status': 'error', 'message': 'Job not found'})}\n\n"
                     break
@@ -57,12 +66,19 @@ class IngestionView(View):
         )
 
     def post(self, request):
+        # Authenticate
+        auth = JWTAuthentication()
+        user_auth = auth.authenticate(request)
+        if not user_auth:
+            return JsonResponse({"error": "Unauthorized"}, status=401)
+        user = user_auth[0]
+
         data = json.loads(request.body)
         repo_url = data.get("repo_url")
         if not repo_url:
             return JsonResponse({"error": "repo_url required"}, status=400)
 
-        job = IngestionJob.objects.create(repo_url=repo_url)
-        ingest_repo.delay(job.id, repo_url)
+        job = IngestionJob.objects.create(repo_url=repo_url, user=user)
+        ingest_repo.delay(job.id, repo_url, user.id)
 
         return JsonResponse({"job_id": job.id})

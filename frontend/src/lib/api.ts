@@ -41,9 +41,13 @@ export async function refreshToken() {
 }
 
 export async function ingestRepo(repoUrl: string): Promise<string> {
+    const token = get(accessToken);
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
 	const res = await fetch(`${BASE_URL}/api/ingest/`, {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
+		headers,
 		body: JSON.stringify({ repo_url: repoUrl })
 	});
 	if (!res.ok) throw new Error('Failed to start ingestion');

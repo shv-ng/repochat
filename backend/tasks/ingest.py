@@ -11,8 +11,11 @@ from services.vectorstore.chroma import Embed
 
 
 @shared_task
-def ingest_repo(job_id: int, repo_url: str):
+def ingest_repo(job_id: int, repo_url: str, user_id: int):
     job = IngestionJob.objects.get(id=job_id)
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    user = User.objects.get(id=user_id)
 
     try:
         job.status = IngestionJob.Status.RUNNING
@@ -44,14 +47,13 @@ def ingest_repo(job_id: int, repo_url: str):
         job.save()
 
         Repo.objects.get_or_create(
-            url=repo_url, defaults={"collection_name": embed.collection_name}
+            url=repo_url, user=user, defaults={"collection_name": embed.collection_name}
         )
 
     except Exception as e:
         job.status = IngestionJob.Status.ERROR
         job.message = str(e)
         job.save()
-
     finally:
-        if clone and getattr(clone, "repo_path", None):
+        if 'clone' in locals() and clone and getattr(clone, "repo_path", None):
             shutil.rmtree(clone.repo_path, ignore_errors=True)
