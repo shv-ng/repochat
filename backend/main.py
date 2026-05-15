@@ -2,11 +2,13 @@ import asyncio
 import uuid
 
 from dotenv import load_dotenv
-from embed import Embed
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.sse import EventSourceResponse
 from langchain_core.messages import AIMessage, HumanMessage
+
+from auth.router import router as auth_router
+from embed import Embed
 from llm import stream_answer
 from tasks import background_ingest, ingest_status
 
@@ -21,6 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth_router)
 
 
 @app.get("/")

@@ -1,4 +1,5 @@
 import pytest
+
 from splitter import chunk_with_metadata
 
 

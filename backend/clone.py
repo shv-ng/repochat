@@ -1,9 +1,9 @@
-from pathlib import Path
 import logging
 import os
-import tempfile
 import shutil
+import tempfile
 import types
+from pathlib import Path
 
 import git
 
