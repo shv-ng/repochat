@@ -1,0 +1,10 @@
+
+[tool.tomlscript] 
+# runserver 
+dev = "uv run manage.py runserver" 
+# manage.py 
+manage = "uv run manage.py" 
+# makemigrations and migrate 
+migrate = "uv run manage.py makemigrations && uv run manage.py migrate" 
+# startapp 
+startapp = "uv run manage.py startapp"

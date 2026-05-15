@@ -4,6 +4,7 @@ from services.github.parser import chunk_with_metadata
 from services.vectorstore.chroma import Embed
 from apps.ingestion.models import IngestionJob
 from pathlib import Path
+from apps.repos.models import Repo
 import shutil
 
 
@@ -39,6 +40,8 @@ def ingest_repo(job_id: int, repo_url: str):
         job.status = IngestionJob.Status.COMPLETED
         job.message = "Done"
         job.save()
+
+        Repo.objects.get_or_create(url=repo_url, collection_name=embed.collection_name)
 
     except Exception as e:
         job.status = IngestionJob.Status.ERROR

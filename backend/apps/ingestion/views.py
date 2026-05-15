@@ -10,12 +10,23 @@ import json
 
 
 class IngestionView(APIView):
-    def get(self, request: Request, job_id: int):
+    def get(
+        self,
+        request: Request,
+    ):
+        job_id = request.query_params.get("job_id")
+        if not job_id:
+            return Response({"error": "job_id required"}, status=400)
+
         def event_stream():
             last_message = None
 
             while True:
-                job = IngestionJob.objects.get(id=job_id)
+                try:
+                    job = IngestionJob.objects.get(id=job_id)
+                except IngestionJob.DoesNotExist:
+                    yield f"data: {json.dumps({'status': 'error', 'message': 'Job not found'})}\n\n"
+                    break
 
                 if job.message != last_message:
                     last_message = job.message
@@ -29,7 +40,10 @@ class IngestionView(APIView):
                         )
                     }\n\n"
 
-                if job.status in ["completed", "error"]:
+                if job.status in [
+                    IngestionJob.Status.COMPLETED,
+                    IngestionJob.Status.ERROR,
+                ]:
                     break
 
                 sleep(1)
@@ -47,4 +61,4 @@ class IngestionView(APIView):
         job = IngestionJob.objects.create(repo_url=repo_url)
         ingest_repo.delay(job.id, repo_url)
 
-        return Response({"task_id": job.id})
+        return Response({"job_id": job.id})
