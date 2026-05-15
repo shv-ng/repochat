@@ -98,10 +98,8 @@ export function streamChat(
 	const run = async () => {
 		const params = new URLSearchParams({ repo_url: repoUrl, query, session_id: sessionId });
 		const token = get(accessToken);
-		const headers: HeadersInit = { 'Content-Type': 'application/json' };
-		if (token) {
-			headers['Authorization'] = `Bearer ${token}`;
-		}
+		const headers: HeadersInit = {};
+		if (token) headers['Authorization'] = `Bearer ${token}`;
 
 		try {
 			const res = await fetch(`${BASE_URL}/api/chat/?${params.toString()}`, {
@@ -114,16 +112,31 @@ export function streamChat(
 
 			const reader = res.body.getReader();
 			const decoder = new TextDecoder();
+			let buffer = '';
 
 			while (true) {
 				const { done, value } = await reader.read();
 				if (done || aborted) break;
-				const chunk = decoder.decode(value, { stream: true });
-				// Assuming server sends SSE-like format or raw stream.
-				// Based on previous code, likely JSON per message.
-				// For simple streaming, we might need a parser if multi-line.
-				onToken(chunk);
+
+				buffer += decoder.decode(value, { stream: true });
+				const lines = buffer.split('\n');
+				buffer = lines.pop() ?? '';  // keep incomplete line
+
+				for (const line of lines) {
+					if (line.startsWith('data: ')) {
+						const raw = line.slice(6).trim();
+						if (!raw) continue;
+						try {
+							const parsed = JSON.parse(raw);
+							const msg = parsed.message ?? parsed;
+							if (typeof msg === 'string' && msg) onToken(msg);
+						} catch {
+							// skip malformed
+						}
+					}
+				}
 			}
+
 			if (!aborted) onDone();
 		} catch (err: any) {
 			if (!aborted) onError(err.message ?? 'Chat failed');
