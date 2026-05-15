@@ -4,7 +4,7 @@ import json
 import uuid
 
 from django.http import StreamingHttpResponse
-from langchain.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from django.http.response import JsonResponse
 from django.views import View
 
@@ -18,6 +18,16 @@ from django.utils.decorators import method_decorator
 
 
 # Create your views here.
+class ChatHistoryView(View):
+    def get(self, request):
+        session_id = request.GET.get("session_id")
+        if not session_id:
+            return JsonResponse({"error": "session_id required"}, status=400)
+        
+        messages = ChatMessage.objects.filter(session__session_id=session_id).order_by("created_at")[:50]
+        data = [{"role": m.role, "content": m.content} for m in messages]
+        return JsonResponse(data, safe=False)
+
 @method_decorator(csrf_exempt, name="dispatch")
 class ChatView(View):
     def get(self, request):

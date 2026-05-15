@@ -5,7 +5,7 @@
   import { marked } from 'marked';
 	import { Input } from '$lib/components/ui/input';
 	import { Separator } from '$lib/components/ui/separator';
-	import { streamChat } from '$lib/api';
+	import { streamChat, getChatHistory } from '$lib/api';
 	import { repoUrl, messages, isIngested } from '$lib/stores';
 	import { get } from 'svelte/store';
 	import type { Message } from '$lib/stores';
@@ -17,7 +17,7 @@
 	const repo = get(repoUrl);
     let sid: string;
 
-	onMount(() => {
+	onMount(async () => {
 		if (!get(isIngested) || !repo) {
 			goto('/');
             return;
@@ -25,6 +25,18 @@
         const storageKey = 'session_' + repo;
         sid = localStorage.getItem(storageKey) ?? crypto.randomUUID();
         localStorage.setItem(storageKey, sid);
+
+        try {
+            const history = await getChatHistory(sid);
+            const formattedHistory: Message[] = history.map((msg: {role: string, content: string}) => ({
+                id: crypto.randomUUID(),
+                role: msg.role === 'ai' ? 'assistant' : msg.role,
+                content: msg.content
+            }));
+            messages.set(formattedHistory);
+        } catch (e) {
+            console.error('Failed to load chat history', e);
+        }
 	});
 
 	async function scrollToBottom() {

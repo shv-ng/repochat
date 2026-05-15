@@ -149,3 +149,9 @@ export function streamChat(
 		controller.abort();
 	};
 }
+
+export async function getChatHistory(sessionId: string) {
+	const res = await fetch(`${BASE_URL}/api/chat/history/?session_id=${sessionId}`);
+	if (!res.ok) throw new Error('Failed to fetch chat history');
+	return await res.json();
+}
