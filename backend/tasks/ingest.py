@@ -1,10 +1,9 @@
 import shutil
 from pathlib import Path
 
-from celery import shared_task
-
 from apps.ingestion.models import IngestionJob
 from apps.repos.models import Repo
+from celery import shared_task
 from services.github.clone import CloneRepo
 from services.github.parser import chunk_with_metadata
 from services.vectorstore.chroma import Embed
@@ -14,6 +13,7 @@ from services.vectorstore.chroma import Embed
 def ingest_repo(job_id: int, repo_url: str, user_id: int):
     job = IngestionJob.objects.get(id=job_id)
     from django.contrib.auth import get_user_model
+
     User = get_user_model()
     user = User.objects.get(id=user_id)
 
@@ -55,5 +55,5 @@ def ingest_repo(job_id: int, repo_url: str, user_id: int):
         job.message = str(e)
         job.save()
     finally:
-        if 'clone' in locals() and clone and getattr(clone, "repo_path", None):
+        if "clone" in locals() and clone and getattr(clone, "repo_path", None):
             shutil.rmtree(clone.repo_path, ignore_errors=True)

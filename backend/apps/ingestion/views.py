@@ -1,34 +1,42 @@
 import json
 from time import sleep
 
+from apps.ingestion.models import IngestionJob
 from django.http import StreamingHttpResponse
 from django.http.response import JsonResponse
-
+from django.utils.decorators import method_decorator
 from django.views import View
-from apps.ingestion.models import IngestionJob
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import AccessToken
 from tasks.ingest import ingest_repo
 
-
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-
-
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # Create your views here.
 @method_decorator(csrf_exempt, name="dispatch")
 class IngestionView(View):
     def get(self, request):
         job_id = request.GET.get("job_id")
+        token = request.GET.get("token")
         if not job_id:
             return JsonResponse({"error": "job_id required"}, status=400)
 
         # Authenticate
-        auth = JWTAuthentication()
-        user_auth = auth.authenticate(request)
-        if not user_auth:
+        try:
+            if token:
+                access_token = AccessToken(token)
+                from django.contrib.auth import get_user_model
+
+                User = get_user_model()
+                user = User.objects.get(id=access_token["user_id"])
+            else:
+                auth = JWTAuthentication()
+                user_auth = auth.authenticate(request)
+                if not user_auth:
+                    return JsonResponse({"error": "Unauthorized"}, status=401)
+                user = user_auth[0]
+        except Exception:
             return JsonResponse({"error": "Unauthorized"}, status=401)
-        user = user_auth[0]
 
         def event_stream():
             last_message = None

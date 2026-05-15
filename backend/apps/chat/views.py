@@ -1,20 +1,18 @@
-from rest_framework_simplejwt.authentication import JWTAuthentication
-import logging
 import json
+import logging
 import uuid
-
-from django.http import StreamingHttpResponse
-from langchain_core.messages import AIMessage, HumanMessage
-from django.http.response import JsonResponse
-from django.views import View
 
 from apps.chat.models import ChatMessage, ChatSession
 from apps.repos.models import Repo
+from django.http import StreamingHttpResponse
+from django.http.response import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from langchain_core.messages import AIMessage, HumanMessage
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from services.llm.stream import stream_answer
 from services.vectorstore.chroma import Embed
-
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 
 
 # Create your views here.
@@ -23,10 +21,13 @@ class ChatHistoryView(View):
         session_id = request.GET.get("session_id")
         if not session_id:
             return JsonResponse({"error": "session_id required"}, status=400)
-        
-        messages = ChatMessage.objects.filter(session__session_id=session_id).order_by("created_at")[:50]
+
+        messages = ChatMessage.objects.filter(session__session_id=session_id).order_by(
+            "created_at"
+        )[:50]
         data = [{"role": m.role, "content": m.content} for m in messages]
         return JsonResponse(data, safe=False)
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ChatView(View):
@@ -65,9 +66,11 @@ class ChatView(View):
 
         messages = session.messages.order_by("-created_at")[:10]
         history = [
-            HumanMessage(content=message.content)
-            if message.role == "user"
-            else AIMessage(content=message.content)
+            (
+                HumanMessage(content=message.content)
+                if message.role == "user"
+                else AIMessage(content=message.content)
+            )
             for message in messages
         ]
 

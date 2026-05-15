@@ -61,7 +61,8 @@ export function watchIngestStatus(
 	onDone: () => void,
 	onError: (err: string) => void
 ): () => void {
-	const es = new EventSource(`${BASE_URL}/api/ingest/?job_id=${jobId}`);
+    const token = get(accessToken);
+	const es = new EventSource(`${BASE_URL}/api/ingest/?job_id=${jobId}${token ? `&token=${token}` : ''}`);
 	let finished = false;
 
 	es.onmessage = (e) => {

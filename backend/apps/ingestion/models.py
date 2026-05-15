@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 # Create your models here.
@@ -10,6 +11,9 @@ class IngestionJob(models.Model):
         COMPLETED = "completed"
         ERROR = "error"
 
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True
+    )
     repo_url = models.CharField()
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING

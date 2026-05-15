@@ -2,7 +2,6 @@ import logging
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_groq import ChatGroq
-
 from services.vectorstore.chroma import QueryResult
 
 SYSTEM_PROMPT = """You are a code assistant for the repo: {repo_url}.
