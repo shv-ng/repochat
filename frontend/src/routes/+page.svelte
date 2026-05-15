@@ -3,13 +3,31 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { ingestRepo, watchIngestStatus } from '$lib/api';
-	import { repoUrl, isIngested } from '$lib/stores';
-	import { get } from 'svelte/store';
+	import { repoUrl, isIngested, accessToken } from '$lib/stores';
+	import { get, onMount } from 'svelte';
+	import { PUBLIC_BASE_URL } from '$env/static/public';
 
 	let url =$state( get(repoUrl) || '');
 	let status =$state( '');
 	let loading =$state( false);
 	let error =$state( '');
+    let prevRepos =$state<string[]>([]);
+
+    onMount(async () => {
+        const token = get(accessToken);
+        if (token) {
+            try {
+                const res = await fetch(`${PUBLIC_BASE_URL}/api/repos/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    prevRepos = await res.json();
+                }
+            } catch (e) {
+                console.error('Failed to fetch prev repos', e);
+            }
+        }
+    });
 
 	async function handleIngest() {
 		if (!url.trim()) return;
@@ -40,6 +58,12 @@
 			status = '';
 		}
 	}
+
+    function selectRepo(r: string) {
+        repoUrl.set(r);
+        isIngested.set(true);
+        goto('/chat');
+    }
 </script>
 
 <div class="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center px-4">
@@ -103,6 +127,20 @@
       </div>
     {/if}
   </div>
+
+    {#if prevRepos.length > 0}
+      <div class="w-full max-w-lg mt-8">
+          <h3 class="text-zinc-400 text-sm font-medium uppercase tracking-wider mb-4">Previously Ingested</h3>
+          <div class="grid gap-2">
+              {#each prevRepos as repo}
+                  <button onclick={() => selectRepo(repo)} class="text-left w-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-3 flex items-center justify-between group transition-colors">
+                      <span class="text-sm text-zinc-300 font-mono group-hover:text-indigo-400">{repo}</span>
+                      <svg class="w-4 h-4 text-zinc-600 group-hover:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  </button>
+              {/each}
+          </div>
+      </div>
+    {/if}
 
   <p class="mt-8 text-xs text-zinc-600">
     Supports public GitHub repos. Large repos may take a moment to index.

@@ -6,7 +6,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Separator } from '$lib/components/ui/separator';
 	import { streamChat } from '$lib/api';
-	import { repoUrl, sessionId, messages, isIngested } from '$lib/stores';
+	import { repoUrl, messages, isIngested } from '$lib/stores';
 	import { get } from 'svelte/store';
 	import type { Message } from '$lib/stores';
 
@@ -15,12 +15,16 @@
 	let chatEl: HTMLDivElement;
 
 	const repo = get(repoUrl);
-	const sid = get(sessionId);
+    let sid: string;
 
 	onMount(() => {
 		if (!get(isIngested) || !repo) {
 			goto('/');
+            return;
 		}
+        const storageKey = 'session_' + repo;
+        sid = localStorage.getItem(storageKey) ?? crypto.randomUUID();
+        localStorage.setItem(storageKey, sid);
 	});
 
 	async function scrollToBottom() {
@@ -79,7 +83,6 @@
 
 	function resetSession() {
 		messages.set([]);
-		sessionId.set(crypto.randomUUID());
 		isIngested.set(false);
 		goto('/');
 	}

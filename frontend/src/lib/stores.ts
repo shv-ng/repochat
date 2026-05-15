@@ -8,7 +8,6 @@ export type Message = {
 };
 
 export const repoUrl = writable<string>('');
-export const sessionId = writable<string>(crypto.randomUUID());
 export const messages = writable<Message[]>([]);
 export const isIngested = writable<boolean>(false);
 export const accessToken = writable<string | null>(null);
