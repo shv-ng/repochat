@@ -13,9 +13,9 @@ dependencies = [
     "langchain-groq>=1.1.2",
     "langchain-text-splitters>=1.1.2",
     "lxml>=6.1.0",
-    "passlib[bcrypt]>=1.7.4",
+    "passlib[argon2]>=1.7.4",
     "python-dotenv>=1.2.2",
-    "python-jose[cryptography]>=3.5.0",
+    "python-jose>=3.5.0",
     "redis>=7.4.0",
 ]
 
