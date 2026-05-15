@@ -53,7 +53,7 @@ User → SvelteKit Frontend
 
 1. Clone the repository:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/shv-ng/repochat.git
    cd repochat
    ```
 
