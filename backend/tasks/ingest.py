@@ -43,7 +43,9 @@ def ingest_repo(job_id: int, repo_url: str):
         job.message = "Done"
         job.save()
 
-        Repo.objects.get_or_create(url=repo_url, collection_name=embed.collection_name)
+        Repo.objects.get_or_create(
+            url=repo_url, defaults={"collection_name": embed.collection_name}
+        )
 
     except Exception as e:
         job.status = IngestionJob.Status.ERROR

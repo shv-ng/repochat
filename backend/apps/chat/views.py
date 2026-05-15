@@ -3,8 +3,8 @@ import uuid
 
 from django.http import StreamingHttpResponse
 from langchain.messages import AIMessage, HumanMessage
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from django.http.response import JsonResponse
+from django.views import View
 
 from apps.chat.models import ChatMessage, ChatSession
 from apps.repos.models import Repo
@@ -17,15 +17,14 @@ from django.utils.decorators import method_decorator
 
 # Create your views here.
 @method_decorator(csrf_exempt, name="dispatch")
-class ChatView(APIView):
+class ChatView(View):
     def get(self, request):
-        repo_url = request.query_params.get("repo_url")
-        query = request.query_params.get("query")
-        session_id = request.query_params.get("session_id")
-        print(repo_url, query, session_id)
+        repo_url = request.GET.get("repo_url")
+        query = request.GET.get("query")
+        session_id = request.GET.get("session_id")
 
         if not repo_url or not query:
-            return Response({"error": "repo_url and query required"}, status=400)
+            return JsonResponse({"error": "repo_url and query required"}, status=400)
 
         if not session_id:
             session_id = str(uuid.uuid4())
@@ -33,7 +32,7 @@ class ChatView(APIView):
         try:
             repo = Repo.objects.get(url=repo_url)
         except Repo.DoesNotExist:
-            return Response({"error": "repo not ingested"}, status=400)
+            return JsonResponse({"error": "repo not ingested"}, status=400)
 
         session, _ = ChatSession.objects.get_or_create(
             repo=repo, session_id=session_id, defaults={"repo": repo}
@@ -53,7 +52,7 @@ class ChatView(APIView):
             for token in stream_answer(repo_url, query, results, history):
                 if token:
                     full_response += token
-                    yield f"data: {json.dumps({'message': full_response})}\n\n"
+                    yield f"data: {json.dumps({'message': token})}\n\n"
             ChatMessage.objects.create(
                 session=session, role=ChatMessage.Role.USER, content=query
             )

@@ -2,22 +2,24 @@ import json
 from time import sleep
 
 from django.http import StreamingHttpResponse
-from rest_framework.request import Request
-from rest_framework.response import Response
+from django.http.response import JsonResponse
 
 from django.views import View
 from apps.ingestion.models import IngestionJob
 from tasks.ingest import ingest_repo
 
 
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+
+# Create your views here.
+@method_decorator(csrf_exempt, name="dispatch")
 class IngestionView(View):
-    def get(
-        self,
-        request: Request,
-    ):
-        job_id = request.query_params.get("job_id")
+    def get(self, request):
+        job_id = request.GET.get("job_id")
         if not job_id:
-            return Response({"error": "job_id required"}, status=400)
+            return JsonResponse({"error": "job_id required"}, status=400)
 
         def event_stream():
             last_message = None
@@ -54,12 +56,13 @@ class IngestionView(View):
             content_type="text/event-stream",
         )
 
-    def post(self, request: Request):
-        repo_url = request.data.get("repo_url")
+    def post(self, request):
+        data = json.loads(request.body)
+        repo_url = data.get("repo_url")
         if not repo_url:
-            return Response({"error": "repo_url required"}, status=400)
+            return JsonResponse({"error": "repo_url required"}, status=400)
 
         job = IngestionJob.objects.create(repo_url=repo_url)
         ingest_repo.delay(job.id, repo_url)
 
-        return Response({"job_id": job.id})
+        return JsonResponse({"job_id": job.id})
