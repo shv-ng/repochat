@@ -7,12 +7,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.sse import EventSourceResponse
 from langchain_core.messages import AIMessage, HumanMessage
 
+from context import asynccontextmanager
 from auth.router import router as auth_router
 from embed import Embed
 from llm import stream_answer
 from tasks import background_ingest, ingest_status
 
+from core.db import engine
 load_dotenv()
+
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+    engine = 
+    yield
 
 app = FastAPI()
 
