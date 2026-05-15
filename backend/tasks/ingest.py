@@ -29,13 +29,14 @@ def ingest_repo(job_id: int, repo_url: str):
                     content = Path(file).read_text(encoding="utf-8", errors="ignore")
                     for chunk in chunk_with_metadata(file, content):
                         embed.embed(chunk.page_content, chunk.metadata)
-            except Exception:
+            except Exception as e:
+                print(f"Error processing file: {file} error: {str(e)}")
                 continue
 
             job.message = f"Processing: {i + 1}/{total} files"
             job.save()
 
-        job.status = IngestionJob.Status.DONE
+        job.status = IngestionJob.Status.COMPLETED
         job.message = "Done"
         job.save()
 
@@ -45,4 +46,5 @@ def ingest_repo(job_id: int, repo_url: str):
         job.save()
 
     finally:
-        shutil.rmtree(clone.repo_path, ignore_errors=True)
+        if clone and getattr(clone, "repo_path", None):
+            shutil.rmtree(clone.repo_path, ignore_errors=True)
