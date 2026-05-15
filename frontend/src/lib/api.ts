@@ -1,6 +1,44 @@
 import { PUBLIC_BASE_URL } from '$env/static/public';
+import { accessToken, refreshToken as refreshTokenStore } from '$lib/stores';
+import { get } from 'svelte/store';
 
 const BASE_URL = PUBLIC_BASE_URL;
+
+export async function login(username: string, password: string) {
+	const res = await fetch(`${BASE_URL}/api/auth/token/`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ username, password })
+	});
+	if (!res.ok) throw new Error('Login failed');
+	const { access, refresh } = await res.json();
+	accessToken.set(access);
+	refreshTokenStore.set(refresh);
+}
+
+export async function register(username: string, password: string) {
+	const res = await fetch(`${BASE_URL}/api/auth/register/`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ username, password })
+	});
+	if (!res.ok) throw new Error('Registration failed');
+	return await res.json();
+}
+
+export async function refreshToken() {
+	const refresh = get(refreshTokenStore);
+	if (!refresh) throw new Error('No refresh token');
+
+	const res = await fetch(`${BASE_URL}/api/auth/refresh/`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ refresh })
+	});
+	if (!res.ok) throw new Error('Token refresh failed');
+	const { access } = await res.json();
+	accessToken.set(access);
+}
 
 export async function ingestRepo(repoUrl: string): Promise<string> {
 	const res = await fetch(`${BASE_URL}/api/ingest/`, {
@@ -54,23 +92,47 @@ export function streamChat(
 	onDone: () => void,
 	onError: (err: string) => void
 ): () => void {
-	const params = new URLSearchParams({ repo_url: repoUrl, query, session_id: sessionId });
-	const es = new EventSource(`${BASE_URL}/api/chat/?${params.toString()}`);
-	let finished = false;
+	let aborted = false;
+	const controller = new AbortController();
 
-	es.onmessage = (e) => {
-		const data = JSON.parse(e.data);
-		const token: string = data.message;
-		onToken(token);
-	};
+	const run = async () => {
+		const params = new URLSearchParams({ repo_url: repoUrl, query, session_id: sessionId });
+		const token = get(accessToken);
+		const headers: HeadersInit = { 'Content-Type': 'application/json' };
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
 
-	es.onerror = () => {
-		es.close();
-		if (!finished) {
-			finished = true;
-			onDone();
+		try {
+			const res = await fetch(`${BASE_URL}/api/chat/?${params.toString()}`, {
+				headers,
+				signal: controller.signal
+			});
+
+			if (!res.ok) throw new Error('Chat request failed');
+			if (!res.body) throw new Error('No response body');
+
+			const reader = res.body.getReader();
+			const decoder = new TextDecoder();
+
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done || aborted) break;
+				const chunk = decoder.decode(value, { stream: true });
+				// Assuming server sends SSE-like format or raw stream.
+				// Based on previous code, likely JSON per message.
+				// For simple streaming, we might need a parser if multi-line.
+				onToken(chunk);
+			}
+			if (!aborted) onDone();
+		} catch (err: any) {
+			if (!aborted) onError(err.message ?? 'Chat failed');
 		}
 	};
 
-	return () => { finished = true; es.close(); };
+	run();
+	return () => {
+		aborted = true;
+		controller.abort();
+	};
 }
