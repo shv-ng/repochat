@@ -1,5 +1,6 @@
 import uuid
 
+from core.db import engine
 from sqlmodel import Field, SQLModel
 
 
@@ -15,3 +16,6 @@ class User(SQLModel, table=True):
     full_name: str | None = None
 
     disabled: bool = False
+
+
+SQLModel.metadata.create_all(engine)

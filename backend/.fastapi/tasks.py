@@ -2,7 +2,6 @@ import shutil
 from pathlib import Path
 
 import redis
-
 from clone import CloneRepo
 from embed import Embed
 from splitter import chunk_with_metadata

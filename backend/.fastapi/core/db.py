@@ -1,4 +1,4 @@
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, create_engine
 
 from .config import settings
 
@@ -6,9 +6,6 @@ engine = create_engine(
     settings.DATABASE_URL,
     echo=True,
 )
-
-
-SQLModel.metadata.create_all(engine)
 
 
 def get_session():
