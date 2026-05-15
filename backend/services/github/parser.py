@@ -2,13 +2,10 @@ import json
 import pprint
 from pathlib import Path
 
-from langchain_text_splitters import (
-    HTMLSectionSplitter,
-    Language,
-    MarkdownHeaderTextSplitter,
-    RecursiveCharacterTextSplitter,
-    RecursiveJsonSplitter,
-)
+from langchain_text_splitters import (HTMLSectionSplitter, Language,
+                                      MarkdownHeaderTextSplitter,
+                                      RecursiveCharacterTextSplitter,
+                                      RecursiveJsonSplitter)
 
 EXTENSION_MAP = {
     ".py": Language.PYTHON,

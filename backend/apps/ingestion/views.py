@@ -1,12 +1,13 @@
-from rest_framework.views import APIView
-from rest_framework.request import Request
-from apps.ingestion.models import IngestionJob
-from rest_framework.response import Response
-from tasks.ingest import ingest_repo
-
-from time import sleep
-from django.http import StreamingHttpResponse
 import json
+from time import sleep
+
+from django.http import StreamingHttpResponse
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.ingestion.models import IngestionJob
+from tasks.ingest import ingest_repo
 
 
 class IngestionView(APIView):

@@ -1,7 +1,8 @@
 from core.db import get_session
+from sqlmodel import Session, select
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session, select
 
 from .models import User
 from .schema import RegisterRequest

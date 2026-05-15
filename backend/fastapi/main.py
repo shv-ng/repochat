@@ -4,11 +4,12 @@ import uuid
 from auth.router import router as auth_router
 from dotenv import load_dotenv
 from embed import Embed
+from langchain_core.messages import AIMessage, HumanMessage
+from llm import stream_answer
+
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.sse import EventSourceResponse
-from langchain_core.messages import AIMessage, HumanMessage
-from llm import stream_answer
 from tasks import background_ingest, ingest_status
 
 load_dotenv()

@@ -1,11 +1,13 @@
+import shutil
+from pathlib import Path
+
 from celery import shared_task
+
+from apps.ingestion.models import IngestionJob
+from apps.repos.models import Repo
 from services.github.clone import CloneRepo
 from services.github.parser import chunk_with_metadata
 from services.vectorstore.chroma import Embed
-from apps.ingestion.models import IngestionJob
-from pathlib import Path
-from apps.repos.models import Repo
-import shutil
 
 
 @shared_task

@@ -1,7 +1,9 @@
+import uuid
+
 from django.db import models
 
 from apps.repos.models import Repo
-import uuid
+
 # Create your models here.
 
 

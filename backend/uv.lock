@@ -128,6 +128,7 @@ dependencies = [
     { name = "lxml" },
     { name = "passlib", extra = ["argon2"] },
     { name = "psycopg2-binary" },
+    { name = "python-dotenv" },
     { name = "redis" },
 ]
 
@@ -145,6 +146,7 @@ requires-dist = [
     { name = "lxml", specifier = ">=6.1.0" },
     { name = "passlib", extras = ["argon2"], specifier = ">=1.7.4" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "redis", specifier = ">=7.4.0" },
 ]
 
