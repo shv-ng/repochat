@@ -15,7 +15,7 @@ prompt = ChatPromptTemplate.from_messages(
     [
         ("system", SYSTEM_PROMPT),
         MessagesPlaceholder("history"),
-        ("user", "{question}"),
+        ("user", "{query}"),
     ]
 )
 
@@ -28,26 +28,26 @@ def format_context(result: list[QueryResult]) -> str:
 
 def stream_answer(
     repo_url: str,
-    question: str,
+    query: str,
     context_results: list[QueryResult],
     history: list[dict],
 ):
     """Stream answer
     Args:
         repo_url (str): repo url
-        question (str): question
+        query (str): query
         context_results (list[QueryResult]): context results
         history (list[dict]): history
     """
-    logging.info(f"Streaming answer for {repo_url} with question: {question}")
+    logging.info(f"Streaming answer for {repo_url} with query: {query}")
 
     context = format_context(context_results)
-    full_question = f"Context:\n{context}\n\nQuestion: {question}"
+    full_query = f"Context:\n{context}\n\nquery: {query}"
 
     for chunk in chain.stream(
         {
             "repo_url": repo_url,
-            "question": full_question,
+            "query": full_query,
             "history": history,
         }
     ):

@@ -4,13 +4,13 @@ from time import sleep
 from django.http import StreamingHttpResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from django.views import View
 from apps.ingestion.models import IngestionJob
 from tasks.ingest import ingest_repo
 
 
-class IngestionView(APIView):
+class IngestionView(View):
     def get(
         self,
         request: Request,

@@ -11,8 +11,12 @@ from apps.repos.models import Repo
 from services.llm.stream import stream_answer
 from services.vectorstore.chroma import Embed
 
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
 
 # Create your views here.
+@method_decorator(csrf_exempt, name="dispatch")
 class ChatView(APIView):
     def get(self, request):
         repo_url = request.query_params.get("repo_url")
