@@ -1,3 +1,5 @@
+from rest_framework_simplejwt.authentication import JWTAuthentication
+import logging
 import json
 import uuid
 
@@ -19,6 +21,14 @@ from django.utils.decorators import method_decorator
 @method_decorator(csrf_exempt, name="dispatch")
 class ChatView(View):
     def get(self, request):
+        auth = JWTAuthentication()
+        try:
+            result = auth.authenticate(request)
+            user = result[0] if result else None
+        except Exception as e:
+            logging.error(e)
+            user = None
+
         repo_url = request.GET.get("repo_url")
         query = request.GET.get("query")
         session_id = request.GET.get("session_id")
@@ -34,9 +44,15 @@ class ChatView(View):
         except Repo.DoesNotExist:
             return JsonResponse({"error": "repo not ingested"}, status=400)
 
-        session, _ = ChatSession.objects.get_or_create(
-            repo=repo, session_id=session_id, defaults={"repo": repo}
-        )
+        if user:
+            session, _ = ChatSession.objects.get_or_create(
+                repo=repo, user=user, defaults={"session_id": session_id}
+            )
+        else:
+            session, _ = ChatSession.objects.get_or_create(
+                repo=repo, session_id=session_id, defaults={"repo": repo, "user": user}
+            )
+
         messages = session.messages.order_by("-created_at")[:10]
         history = [
             HumanMessage(content=message.content)

@@ -3,6 +3,7 @@ import uuid
 from django.db import models
 
 from apps.repos.models import Repo
+from django.contrib.auth.models import User
 
 # Create your models here.
 
@@ -12,6 +13,14 @@ class ChatSession(models.Model):
     repo = models.ForeignKey(
         Repo, on_delete=models.CASCADE, related_name="chat_sessions"
     )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="chat_sessions",
+        null=True,
+        blank=True,
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
